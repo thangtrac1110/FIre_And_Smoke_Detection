@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smoke & Fire Detection — YOLOv26</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="layout">
+
+        <header class="header">
+            <div class="header-logo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                    <path d="M2 17l10 5 10-5"/>
+                    <path d="M2 12l10 5 10-5"/>
+                </svg>
+                <div>
+                    <div class="header-title">Vigil Fum-Incendii</div>
+                    <div class="header-version">YOLOv26 &middot; Real-Time Detection</div>
+                </div>
+            </div>
+            <div class="header-divider"></div>
+            <div class="header-status">
+                <span class="header-status-dot" id="header-status-dot"></span>
+                <span id="header-status-text">System idle</span>
+            </div>
+            <div class="header-spacer"></div>
+            <span class="header-badge">Live</span>
+        </header>
+
+        <aside class="controls-panel">
+
+            <div class="controls-section">
+                <div class="controls-section-label">Source</div>
+                <div class="input-group">
+                    <label for="ip-url">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                        IP Webcam URL
+                    </label>
+                    <div class="input-wrapper">
+                        <span class="input-prefix">http://</span>
+                        <input type="text" id="ip-url" value="{{ default_url }}" placeholder="192.168.1.1:8080/video">
+                    </div>
+                </div>
+                <div class="button-grid">
+                    <button id="btn-ip" class="btn btn-primary">
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 8v4l3 3"/></svg>
+                        IP Camera
+                    </button>
+                    <button id="btn-webcam" class="btn btn-secondary">
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+                        Webcam
+                    </button>
+                    <label id="btn-upload-label" class="btn btn-upload">
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        Upload Video
+                        <input type="file" id="video-upload" accept="video/*">
+                    </label>
+                    <button id="btn-stop" class="btn btn-danger">
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                        Stop
+                    </button>
+                </div>
+                <div class="status-strip" id="status-strip">
+                    <span class="status-dot" id="status-dot"></span>
+                    <span class="status-text" id="status-text">Ready — select a source to begin</span>
+                </div>
+            </div>
+
+            {% if public_camera_url %}
+            <div class="controls-section" id="public-camera-section">
+                <div class="controls-section-label">Live Public Camera</div>
+                <div class="angelcam-info">
+                    <svg class="angelcam-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    <span class="angelcam-name">{{ public_camera_name }}</span>
+                </div>
+                <div class="angelcam-url-row">
+                    <span class="angelcam-url-label">Stream</span>
+                    <span class="angelcam-url" id="public-camera-url-display">{{ public_camera_url }}</span>
+                </div>
+                <button id="btn-public" class="btn btn-angelcam">
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    Start Stream
+                </button>
+            </div>
+            {% endif %}
+
+            <div class="controls-section">
+                <div class="controls-section-label">Detection Parameters</div>
+                <div class="threshold-group">
+                    <div class="threshold-item">
+                        <div class="threshold-header">
+                            <span class="threshold-label">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+                                Confidence
+                            </span>
+                            <span class="threshold-value" id="conf-value">0.25</span>
+                        </div>
+                        <input type="range" id="conf-slider" class="param-slider" min="0.05" max="0.95" step="0.05" value="0.25">
+                    </div>
+                    <div class="threshold-item">
+                        <div class="threshold-header">
+                            <span class="threshold-label">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><path d="M10 7h4v0M7 10v4"/></svg>
+                                IoU
+                            </span>
+                            <span class="threshold-value" id="iou-value">0.70</span>
+                        </div>
+                        <input type="range" id="iou-slider" class="param-slider" min="0.10" max="0.95" step="0.05" value="0.70">
+                    </div>
+                </div>
+            </div>
+
+        </aside>
+
+        <main class="main-content">
+
+            <div class="viewport-wrapper">
+                <div class="viewport-frame" id="viewport-frame">
+                    <div class="viewport-corner viewport-corner-tl"></div>
+                    <div class="viewport-corner viewport-corner-tr"></div>
+                    <div class="viewport-corner viewport-corner-bl"></div>
+                    <div class="viewport-corner viewport-corner-br"></div>
+                    <div class="viewport-sweep"></div>
+
+                    <img class="viewport-feed" id="video-feed" src="" alt="Detection Feed">
+
+                    <div class="viewport-placeholder" id="viewport-placeholder">
+                        <div class="placeholder-graphic">
+                            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="50" cy="50" r="30" stroke="#6B6B70" stroke-width="1.5" stroke-dasharray="4 4"/>
+                                <circle cx="50" cy="50" r="18" stroke="#6B6B70" stroke-width="1" stroke-dasharray="3 3"/>
+                                <circle cx="50" cy="50" r="6" fill="#F59E0B" opacity="0.5"/>
+                                <line x1="50" y1="15" x2="50" y2="25" stroke="#6B6B70" stroke-width="1.5"/>
+                                <line x1="50" y1="75" x2="50" y2="85" stroke="#6B6B70" stroke-width="1.5"/>
+                                <line x1="15" y1="50" x2="25" y2="50" stroke="#6B6B70" stroke-width="1.5"/>
+                                <line x1="75" y1="50" x2="85" y2="50" stroke="#6B6B70" stroke-width="1.5"/>
+                                <line x1="50" y1="50" x2="68" y2="38" stroke="#F59E0B" stroke-width="1" opacity="0.6"/>
+                            </svg>
+                        </div>
+                        <span class="placeholder-text">Awaiting input</span>
+                    </div>
+
+                    <div class="viewport-loading" id="viewport-loading">
+                        <div class="loading-spinner"></div>
+                        <span class="loading-text">Connecting</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="metrics-strip" id="metrics-strip">
+                <div class="metric-tile">
+                    <div class="metric-icon-wrap">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                    </div>
+                    <div class="metric-data">
+                        <span class="metric-label">Frame Rate</span>
+                        <span class="metric-value highlight" id="metric-fps">0.0</span>
+                    </div>
+                </div>
+                <div class="metric-tile">
+                    <div class="metric-icon-wrap">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><path d="M14 7h0M7 10v4"/></svg>
+                    </div>
+                    <div class="metric-data">
+                        <span class="metric-label">Total</span>
+                        <span class="metric-value" id="metric-total">0</span>
+                    </div>
+                </div>
+                <div class="metric-tile">
+                    <div class="metric-icon-wrap">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    </div>
+                    <div class="metric-data">
+                        <span class="metric-label">Min Conf</span>
+                        <span class="metric-value" id="metric-conf">—</span>
+                    </div>
+                </div>
+                <div class="metric-tile">
+                    <div class="metric-icon-wrap">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                    </div>
+                    <div class="metric-data">
+                        <span class="metric-label">Classes</span>
+                        <span class="metric-value" id="metric-class-count">—</span>
+                    </div>
+                </div>
+                <div class="metric-tile metric-tile-classes">
+                    <div class="metric-icon-wrap">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+                    </div>
+                    <div class="metric-data">
+                        <span class="metric-label">Breakdown</span>
+                        <span class="class-list" id="metric-classes">—</span>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal">
+            <div class="modal-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <p class="modal-message">The IP Webcam stream could not be reached. Would you like to switch to the local webcam instead?</p>
+            <div class="modal-actions">
+                <button id="modal-yes" class="btn btn-secondary">Yes, use webcam</button>
+                <button id="modal-no" class="btn btn-danger">No</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
