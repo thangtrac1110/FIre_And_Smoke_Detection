@@ -1,36 +1,36 @@
 # Fire and Smoke Detection
 
-Ứng dụng web phát hiện **lửa và khói theo thời gian thực** bằng mô hình YOLO (Ultralytics), giao diện viết bằng Flask. Video được nhận dạng từng khung hình, vẽ khung bao quanh vùng có lửa/khói và hiển thị thống kê trực tiếp trên trình duyệt.
+A real-time **fire and smoke detection** web app built with Ultralytics YOLO and Flask. Each video frame is run through the model, detected fire and smoke regions are drawn with bounding boxes, and live statistics are shown in the browser.
 
-## Tính năng
+## Features
 
-- Nhiều nguồn video:
-  - Webcam của máy
-  - Camera IP (ví dụ app **IP Webcam** trên điện thoại)
-  - File video tải lên
-  - Luồng camera công khai (MJPEG)
-- Điều chỉnh ngưỡng **confidence** và **IoU** ngay trong lúc chạy
-- Bảng thông số trực tiếp: FPS, tổng số đối tượng phát hiện, số lượng theo từng lớp, độ tin cậy thấp nhất
+- Multiple video sources:
+  - Local webcam
+  - IP camera (e.g. the **IP Webcam** app on an Android phone)
+  - Uploaded video files
+  - Public camera streams (MJPEG)
+- Adjust **confidence** and **IoU** thresholds on the fly
+- Live metrics panel: FPS, total detections, per-class counts, lowest confidence score
 
-## Cấu trúc thư mục
+## Project structure
 
 ```
-├── app.py            # Flask server: các route stream, upload, metrics
-├── captures.py       # Các lớp đọc nguồn video (OpenCV, HLS qua FFmpeg)
-├── config.yaml       # Cấu hình model, camera, server
+├── app.py            # Flask server: streaming, upload and metrics routes
+├── captures.py       # Video source readers (OpenCV, HLS via FFmpeg)
+├── config.yaml       # Model, camera and server settings
 ├── requirements.txt
 ├── models/
-│   ├── best.pt       # Trọng số đã huấn luyện cho lửa/khói (được dùng mặc định)
-│   └── yolo26n.pt    # Trọng số YOLO gốc
-├── static/           # CSS, JS, hình ảnh
+│   ├── best.pt       # Fire/smoke weights (used by default)
+│   └── yolo26n.pt    # Base YOLO weights
+├── static/           # CSS, JS and images
 ├── templates/
-│   └── index.html    # Giao diện chính
-└── uploads/          # Video tải lên và video mẫu để thử
+│   └── index.html    # Main web page
+└── uploads/          # Uploaded videos and sample clips for testing
 ```
 
-## Cài đặt
+## Installation
 
-Yêu cầu Python 3.10 trở lên.
+Requires Python 3.10 or newer.
 
 ```bash
 git clone https://github.com/thangtrac1110/FIre_And_Smoke_Detection.git
@@ -45,39 +45,39 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## Chạy ứng dụng
+## Usage
 
 ```bash
 python app.py
 ```
 
-Mở trình duyệt tại **http://localhost:5000**, chọn nguồn video rồi bấm bắt đầu.
+Open **http://localhost:5000** in your browser, pick a video source and start the stream.
 
-Để thử nhanh mà không cần camera, chọn nguồn **File** và dùng một trong các video mẫu có sẵn trong thư mục `uploads/`.
+To try it without a camera, choose the **File** source and use one of the sample videos in the `uploads/` folder.
 
-## Cấu hình
+## Configuration
 
-Chỉnh trong `config.yaml`:
+Edit `config.yaml`:
 
-| Khóa | Ý nghĩa |
+| Key | Description |
 |---|---|
-| `model.path` | Đường dẫn file trọng số YOLO |
-| `ip_webcam.default_url` | Địa chỉ mặc định của camera IP, ví dụ `http://<ip-điện-thoại>:8080/video` |
-| `public_camera.default_stream_url` | Luồng camera công khai mặc định |
-| `server.host`, `server.port` | Địa chỉ và cổng chạy server |
-| `server.debug` | Bật chế độ debug của Flask (nên tắt khi triển khai) |
+| `model.path` | Path to the YOLO weights file |
+| `ip_webcam.default_url` | Default IP camera URL, e.g. `http://<phone-ip>:8080/video` |
+| `public_camera.default_stream_url` | Default public camera stream |
+| `server.host`, `server.port` | Server address and port |
+| `server.debug` | Flask debug mode (turn off in production) |
 
 ## API
 
-| Route | Phương thức | Mô tả |
+| Route | Method | Description |
 |---|---|---|
-| `/video_feed?source=webcam\|ip\|file\|public` | GET | Luồng MJPEG đã được nhận dạng |
-| `/upload` | POST | Tải video lên (trường `video`) |
-| `/update_params?conf=&iou=` | POST | Cập nhật ngưỡng nhận dạng |
-| `/metrics` | GET | Thông số hiện tại dạng JSON |
-| `/check_stream?url=` | GET | Kiểm tra camera IP có kết nối được không |
-| `/stop_stream` | POST | Dừng luồng hiện tại |
+| `/video_feed?source=webcam\|ip\|file\|public` | GET | Annotated MJPEG stream |
+| `/upload` | POST | Upload a video (form field `video`) |
+| `/update_params?conf=&iou=` | POST | Update detection thresholds |
+| `/metrics` | GET | Current metrics as JSON |
+| `/check_stream?url=` | GET | Check whether an IP camera is reachable |
+| `/stop_stream` | POST | Stop the current stream |
 
-## Ghi công
+## Credits
 
-Mã nguồn ban đầu từ [NhanPhan090806/FIre_And_Smoke_Detection](https://github.com/NhanPhan090806/FIre_And_Smoke_Detection).
+Original source code by [NhanPhan090806/FIre_And_Smoke_Detection](https://github.com/NhanPhan090806/FIre_And_Smoke_Detection).
